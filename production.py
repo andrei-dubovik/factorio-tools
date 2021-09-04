@@ -14,9 +14,9 @@ from scipy.optimize import linprog
 from recipes import Item, Technology
 
 # Define named tuples
-EnumItem = namedtuple('item', ['id', 'name', 'type', 'amount'])
+EnumItem = namedtuple('item', ['id', *Item._fields])
 OptimalTech = namedtuple(
-    'technology', ['name', 'category', 'inputs', 'outputs', 'time', 'cycles']
+    'technology', [*Technology._fields, 'cycles']
 )
 TotalFlows = namedtuple('totalflows', ['inputs', 'intermediate', 'outputs'])
 
@@ -38,21 +38,22 @@ def list_resources(technologies):
     outputs = set(i.name for t in technologies for i in t.outputs)
     return inputs - outputs
 
+
+def update(ntuple, **kwargs):
+    """Update named tuple."""
+    return dict(ntuple._asdict(), **kwargs)
+
+
 def enumerate_items(technologies):
     """Enumerate technology/item pairs"""
     rslt = []
-    i = 0
-    for name, category, inputs, outputs, time in technologies:
-        offset1 = i
-        offset2 = i + len(inputs)
-        rslt.append(Technology(
-            name,
-            category,
-            [EnumItem(offset1 + j, *item) for j, item in enumerate(inputs)],
-            [EnumItem(offset2 + j, *item) for j, item in enumerate(outputs)],
-            time
-        ))
-        i += len(inputs) + len(outputs)
+    j0 = 0
+    for t in technologies:
+        j1 = j0 + len(t.inputs)
+        inputs = [EnumItem(j0 + j, *item) for j, item in enumerate(t.inputs)]
+        outputs = [EnumItem(j1 + j, *item) for j, item in enumerate(t.outputs)]
+        rslt.append(Technology(**update(t, inputs=inputs, outputs=outputs)))
+        j0 = j1 + len(t.outputs)
     return rslt
 
 
@@ -121,9 +122,9 @@ def collect_results(technologies, lp_res):
         if not np.isclose(cycles, 0):
             inputs = [Item(*i[1:]) for i in t.inputs]  # drop id
             outputs = [Item(*i[1:]) for i in t.outputs]  # drop id
-            solution.append(OptimalTech(
-                t.name, t.category, inputs, outputs, t.time, cycles
-            ))
+            solution.append(OptimalTech(**update(
+                t, inputs=inputs, outputs=outputs, cycles=cycles
+            )))
     return solution
 
 
@@ -184,7 +185,7 @@ def optimize_or(objectives, resources, technologies):
     sol = [t for s, _ in solutions for t in s]
     key = lambda t: t.name
     sol = [list(g) for n, g in groupby(sorted(sol, key=key), key=key)]
-    sol = [OptimalTech(*g[0][:5], max(t[5] for t in g)) for g in sol]
+    sol = [OptimalTech(**update(g[0], cycles=max(t.cycles for t in g))) for g in sol]
 
     # Merge flows
     def merge_flow(k):
