@@ -16,8 +16,8 @@ CATEGORY = {
 }
 
 # Define named tuples
-Technology = namedtuple(
-    'technology', ['name', 'category', 'inputs', 'outputs', 'time']
+Technology = namedtuple('technology',
+    ['name', 'category', 'intermediate', 'inputs', 'outputs', 'time']
 )
 
 Item = namedtuple('item', ['name', 'type', 'amount'])
@@ -59,13 +59,14 @@ def convert_item(item):
         amount = item['amount']
         prob = item.get('probability', 1)
         return Item(item['name'], item_type, amount*prob)
-    
 
-def convert_recipe(recipe):
+
+def convert_recipe(recipe, intermediate):
     """Convert a dictionary to a named tuple, change field names."""
     return Technology(
         recipe['name'],
         recipe['category'],
+        recipe['name'] in intermediate,
         [convert_item(r) for r in recipe['ingredients']],
         [convert_item(r) for r in recipe['results']],
         recipe['energy_required']
@@ -75,7 +76,8 @@ def convert_recipe(recipe):
 def load_recipes(path, mode):
     """Load recipes from a json file."""
     with open(path) as file:
-        recipes = json.load(file)
-    recipes = [pluralize_result(select_mode(r, mode)) for r in recipes]
-    recipes = [convert_recipe(add_defaults(r)) for r in recipes]
+        data = json.load(file)
+    intermediate = set(data['intermediate'])
+    recipes = [pluralize_result(select_mode(r, mode)) for r in data['recipes']]
+    recipes = [convert_recipe(add_defaults(r), intermediate) for r in recipes]
     return recipes
