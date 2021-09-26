@@ -1,13 +1,9 @@
+-- Load specific Factorio prototype files and convert them to json
+
 data = {}
 
 function data.extend(data, recipes)
-  dump(recipes, "recipes.json")
-end
-
-function dump(obj, path)
-  file = io.open(path, "w")
-  write(obj, file)
-  file:close()
+  write(recipes, io.stdout)
 end
 
 function write(obj, file)
@@ -50,4 +46,6 @@ function write(obj, file)
   end
 end
 
-dofile "recipe.lua"
+factorio_root = arg[1]
+recipe_lua = factorio_root .. "data/base/prototypes/recipe.lua"
+dofile(recipe_lua)
