@@ -21,41 +21,28 @@ def sym_ceil(x, tol=1e-08):
         return math.floor(x)
 
 
-def default_speed():
-    """Return starting crafting speeds per category."""
-    return {
-        'crafting': 0.5,
-        'chemistry': 1.0,
-        'smelting': 1.0,
-        'centrifuging': 1.0,
-        'oil-processing': 1.0,
-        'rocket-building': 1.0,
-    }
-
-
-def print_io(technologies, speed=default_speed()):
+def print_io(technologies):
     """Print per-facility input/output requirements."""
     headers = ['name', 'direction', 'items/s', 'type']
     rows = []
     for t in technologies:
-        time = t.time / speed[t.category]
         rows.append([t.name])
         for items, lbl in [(t.inputs, 'in'), (t.outputs, 'out')]:
             for name, item_type, amount in items:
-                flow = amount / time
+                flow = amount / t.time
                 rows.append(['  ' + name, lbl, flow, item_type])
     print(tabulate.tabulate(rows, headers=headers))
 
 
-def print_technologies(technologies, speed=default_speed()):
+def print_technologies(technologies):
     """Print technologies, indicate the number of required facilities."""
     headers = [
         'name', 'cycles/s\n(machine)', 'cycles\n(demand)', 'time or count'
     ]
     rows = []
     for t in technologies:
-        cycles = speed[t.category] / t.time
-        count = t.cycles / cycles
+        cycles = 1 / t.time
+        count = t.cycles * t.time
         rows.append([t.name, cycles, t.cycles, count])
     print(tabulate.tabulate(rows, headers=headers))
 

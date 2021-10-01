@@ -12,6 +12,7 @@ from scipy.optimize import linprog
 
 # Local libraries
 from recipes import Item, Technology
+from common import update
 
 # Define named tuples
 EnumItem = namedtuple('item', ['id', *Item._fields])
@@ -37,11 +38,6 @@ def list_resources(technologies):
     inputs = set(i.name for t in technologies for i in t.inputs)
     outputs = set(i.name for t in technologies for i in t.outputs)
     return inputs - outputs
-
-
-def update(ntuple, **kwargs):
-    """Update named tuple."""
-    return dict(ntuple._asdict(), **kwargs)
 
 
 def enumerate_items(technologies):
